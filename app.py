@@ -47,3 +47,18 @@ def delete_chore(chore_id):
         return jsonify({'message': 'Chore deleted successfully'}), 200
     else:
         return jsonify({'error': 'Chore not found'}), 404
+    
+
+    
+@app.route('/update_chore', methods=['POST'])
+def update_chore():
+    data = request.get_json()  # Get data from request body
+    chore_id = data.get('id')
+    finished = data.get('finished')
+    if chore_id:
+        chore = ToDo.query.get(chore_id)
+        chore.finished = not finished
+        db.session.commit()
+        return jsonify({'message': 'Chore updated successfully'}), 200
+    else:
+        return jsonify({'error': 'Chore not found'}), 404
