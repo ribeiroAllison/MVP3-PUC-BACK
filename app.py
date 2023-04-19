@@ -23,13 +23,14 @@ def getList():
 
 
 @app.route('/add_chore', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def add_chore():
     data = request.get_json()  # Get data from request body
     chore = data.get('chore')
-    finished = data.get('finished', False)
+    finished = data.get('finished')
     if chore:
         # Create a new ToDo object and add it to the database
-        new_chore = ToDo(chore=chore, finished=finished)
+        new_chore = ToDo(chores=chore, finished=finished)
         db.session.add(new_chore)
         db.session.commit()
         return jsonify({'message': 'Chore added successfully'}), 201
