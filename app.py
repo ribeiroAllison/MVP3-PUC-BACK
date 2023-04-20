@@ -35,7 +35,7 @@ def add_chore():
         db.session.commit()
         return jsonify({'message': 'Chore added successfully'}), 201
     else:
-        return jsonify({'error': 'Title is required'}), 400
+        return jsonify({'error': 'Chore name is required'}), 400
 
 
 @app.route('/delete_chore/<int:chore_id>', methods=['DELETE'])

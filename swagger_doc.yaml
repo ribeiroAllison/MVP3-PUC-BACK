@@ -1,0 +1,149 @@
+openapi: 3.0.1
+info:
+  title: ToDo app
+  version: 1.0.0
+  description: Uma API básica que gerencias os dados de uma web app de lista de tarefas
+paths:
+  /get_list:
+    summary: Tipo GET que retorna a tabela inteira
+    description: >-
+      Retorna todos os dados da tabela ToDo, com as tarefas a serem feitas e seu
+      status.
+    get:
+      summary: Retorna todas as tarefas
+      description: Retorna arquico em json.
+      operationId: get_list
+      responses:
+        '200':
+          content:
+            application/json:
+              examples:
+                chores:
+                  value: >-
+                    [{"chores":"Fazer uma
+                    API","finished":true,"id":1},{"chores":"Desenvolver um
+                    Front-End","finished":true,"id":2}]
+          description: Success
+      tags:
+        - Retorna Todos os Dados do BD
+  /add_chore:
+    summary: Adiciona uma nova tarefa
+    description: Post que adiciona ao banco de dados uma nova tarefa
+    post:
+      summary: Adicionar tarefas
+      description: post tarefas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Add_Chore'
+      operationId: add_chore
+      responses:
+        '201':
+          content:
+            application/json:
+              examples:
+                chores:
+                  value: >-
+                    {'message': 'Chore added successfully'}
+          description: Success
+        '400':
+          content:
+            application/json:
+              examples:
+                chores:
+                  value: >-
+                    {'message': 'Chore added successfully'}
+          description: Failed
+      tags:
+        - Adiciona Tarefas
+  /delete_chore/{id}:
+    summary: Deleta uma tarefa
+    description: Remove uma tarefa da lista
+    delete:
+      summary: ''
+      description: ''
+      operationId: deleteChore
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id da tarefa a ser deletada
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              examples:
+                chores:
+                  value: >-
+                    {'message': 'Chore deleted successfully'}
+          description: Success
+        '404':
+          content:
+            application/json:
+              examples:
+                chores:
+                  value: >-
+                    {'error': 'Chore note found'}
+          description: Failed
+      tags:
+        - Deleta Tarefa
+  /update_chore:
+    summary: Altera o status de uma tarefa
+    description: Muda o status de uma tarefa de pendente para concluído e vice versa
+    post:
+      summary: ''
+      description: ''
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Change_Status'
+      operationId: updateChoreStatus
+      responses:
+        '200':
+          content:
+            application/json:
+              examples:
+                chores:
+                  value: >-
+                    {'message': 'Chore updated successfully'}
+          description: Success
+        '404':
+          content:
+            application/json:
+              examples:
+                chores:
+                  value: >-
+                    {'error': 'Chore note found'}
+          description: Failed
+      tags:
+        - Altera Status da Tarefa
+servers:
+  - url: http://127.0.0.1:5000
+    variables: {}
+components:
+  schemas:
+    Add_Chore:
+      type: object
+      properties:
+        chore:
+          type: string
+        finished:
+          type: boolean
+      xml:
+        name: ToDo
+        
+    Change_Status:
+      type: object
+      properties:
+        id:
+          type: integer
+        finished:
+          type: boolean
+      xml:
+        name: ToDo
