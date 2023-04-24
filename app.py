@@ -1,9 +1,12 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS, cross_origin
+from flask_openapi3 import OpenAPI, Info, Tag
+from TarefasSchema import *
 
 
-app = Flask(__name__)
+info = Info(title="API de lista de tarefas", version='1.0.0')
+app = OpenAPI(__name__, info=info)
 app.app_context().push()
 CORS(app, support_credentials=True)
 
@@ -14,7 +17,19 @@ db = SQLAlchemy(app)
 
 from model import ToDo
 
-@app.route('/get_list')
+# definindo tags
+home_tag = Tag(name="Documentação", description="Seleção de documentação: Swagger, Redoc ou RapiDoc")
+get_list_tag = Tag(name='Lista de Tarefas', description='Retorna a lista completa de tarefas')
+add_chore_tag = Tag(name='Adiciona Tarefa', description='Adiciona uma nova tarefa à lista')
+
+@app.get('/', tags=[home_tag])
+def home():
+    """Redireciona para /openapi, tela que permite a escolha do estilo de documentação.
+    """
+    return redirect('/openapi')
+
+@app.get('/get_list', tags=[get_list_tag],
+                    responses={'200': ListaDeTarefas, '404': ErrorSchema})
 @cross_origin(supports_credentials=True)
 def getList():
     chore_list = ToDo.query.all()
@@ -22,15 +37,17 @@ def getList():
     return chore_list_dict
 
 
-@app.route('/add_chore', methods=['POST'])
+@app.post('/add_chore', methods=['POST'], tags=[add_chore_tag],
+                                responses={'200': AdicionaTarefa, '400': ErrorSchema})
 @cross_origin(supports_credentials=True)
-def add_chore():
+def add_chore(form: AdicionaTarefa):
     data = request.get_json()  # Get data from request body
-    chore = data.get('chore')
-    finished = data.get('finished')
-    if chore:
+    dataObject = AdicionaTarefa(chore=data.get('chore'), finished=data.get('finished'))
+    # chore = data.get('chore')
+    # finished = data.get('finished')
+    if dataObject or form:
         # Create a new ToDo object and add it to the database
-        new_chore = ToDo(chores=chore, finished=finished)
+        new_chore = ToDo(chores=form.chore if form.chore else dataObject.chore, finished=form.finished if form.finished else dataObject.finished)
         db.session.add(new_chore)
         db.session.commit()
         return jsonify({'message': 'Chore added successfully'}), 201
