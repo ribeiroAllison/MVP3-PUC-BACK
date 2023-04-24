@@ -8,7 +8,7 @@ from TarefasSchema import *
 info = Info(title="API de lista de tarefas", version='1.0.0')
 app = OpenAPI(__name__, info=info)
 app.app_context().push()
-CORS(app, support_credentials=True)
+CORS(app, origins='http://127.0.0.1:5500')
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -41,13 +41,12 @@ def getList():
                                 responses={'200': AdicionaTarefa, '400': ErrorSchema})
 @cross_origin(supports_credentials=True)
 def add_chore(form: AdicionaTarefa):
-    data = request.get_json()  # Get data from request body
-    dataObject = AdicionaTarefa(chore=data.get('chore'), finished=data.get('finished'))
-    # chore = data.get('chore')
-    # finished = data.get('finished')
-    if dataObject or form:
+    chore = form.chore
+    finished = form.finished
+
+    if chore:
         # Create a new ToDo object and add it to the database
-        new_chore = ToDo(chores=form.chore if form.chore else dataObject.chore, finished=form.finished if form.finished else dataObject.finished)
+        new_chore = ToDo(chores=chore , finished=finished)
         db.session.add(new_chore)
         db.session.commit()
         return jsonify({'message': 'Chore added successfully'}), 201
