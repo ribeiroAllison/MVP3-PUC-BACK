@@ -5,10 +5,15 @@ from flask_openapi3 import OpenAPI, Info, Tag
 from TarefasSchema import *
 
 
+
+
+
 info = Info(title="API de lista de tarefas", version='1.0.0')
 app = OpenAPI(__name__, info=info)
 app.app_context().push()
-CORS(app, origins='http://127.0.0.1:5500')
+CORS(app, supports_credentials=True, resource={r"/": { "origins":""} })
+
+
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -26,7 +31,7 @@ add_chore_tag = Tag(name='Adiciona Tarefa', description='Adiciona uma nova taref
 def home():
     """Redireciona para /openapi, tela que permite a escolha do estilo de documentação.
     """
-    return redirect('/openapi')
+    return redirect('/openapi/swagger')
 
 @app.get('/get_list', tags=[get_list_tag],
                     responses={'200': ListaDeTarefas, '404': ErrorSchema})
@@ -37,7 +42,7 @@ def getList():
     return chore_list_dict
 
 
-@app.post('/add_chore', methods=['POST'], tags=[add_chore_tag],
+@app.post('/add_chore', tags=[add_chore_tag],
                                 responses={'200': AdicionaTarefa, '400': ErrorSchema})
 @cross_origin(supports_credentials=True)
 def add_chore(form: AdicionaTarefa):
