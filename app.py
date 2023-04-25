@@ -74,7 +74,7 @@ def delete_chore(query: DeleteSchema):
     
 
     
-@app.post('/update_chore', methods=['POST'],
+@app.post('/update_chore', tags=[update_tag],
                                 responses={'200': AtualizaTarefa, '400': ErrorSchema})
 @cross_origin(supports_credentials=True)
 def update_chore(form: AtualizaTarefa):
