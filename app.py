@@ -26,6 +26,8 @@ from model import ToDo
 home_tag = Tag(name="Documentação", description="Seleção de documentação: Swagger, Redoc ou RapiDoc")
 get_list_tag = Tag(name='Lista de Tarefas', description='Retorna a lista completa de tarefas')
 add_chore_tag = Tag(name='Adiciona Tarefa', description='Adiciona uma nova tarefa à lista')
+delete_tag = Tag(name='Deleta uma Tarefa', description='Remove uma tarefa da lista')
+update_tag = Tag(name='Atualiza Status', description='Muda o status de uma tarefa')
 
 @app.get('/', tags=[home_tag])
 def home():
@@ -59,9 +61,10 @@ def add_chore(form: AdicionaTarefa):
         return jsonify({'error': 'Chore name is required'}), 400
 
 
-@app.route('/delete_chore/<int:chore_id>', methods=['DELETE'])
-def delete_chore(chore_id):
-    chore = ToDo.query.get(chore_id)  # Get chore object by ID
+@app.delete('/delete_chore', tags=[delete_tag],
+                                responses={'200': DeleteSchema, '400': ErrorSchema})
+def delete_chore(query: DeleteSchema):
+    chore = ToDo.query.get(query.id)  # Get chore object by ID
     if chore:
         db.session.delete(chore)  # Delete chore object from the database
         db.session.commit()
@@ -71,11 +74,12 @@ def delete_chore(chore_id):
     
 
     
-@app.route('/update_chore', methods=['POST'])
-def update_chore():
-    data = request.get_json()  # Get data from request body
-    chore_id = data.get('id')
-    finished = data.get('finished')
+@app.post('/update_chore', methods=['POST'],
+                                responses={'200': AtualizaTarefa, '400': ErrorSchema})
+@cross_origin(supports_credentials=True)
+def update_chore(form: AtualizaTarefa):
+    chore_id = form.id
+    finished = form.finished
     if chore_id:
         chore = ToDo.query.get(chore_id)
         chore.finished = not finished
