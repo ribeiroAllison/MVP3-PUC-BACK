@@ -20,21 +20,30 @@ Esta API recebe requests do front-end e atualiza um banco de dados contendo uma 
 ### Cenário 1, sem utilização de ambiente virtual:
 
 - Execute no terminal:
-```pip install -r requirements.txt```
+```
+pip install -r requirements.txt
+```
 
 - Inicie o servidor com este comando no terminal:
-```python -m flask run ```
-
+```
+python -m flask run 
+```
 ### Cenário 2, com utilização de ambiente virtual:
 
 - Ative o ambiente virtual com o comando:
-```source .venv(ou o nome do seu ambiente)/Scripts/activate```
+```
+source .venv(ou o nome do seu ambiente)/Scripts/activate
+```
 
 - Execute no terminal:
-```pip install -r requirements.txt```
+```
+pip install -r requirements.txt
+```
 
 - Inicie o servidor com este comando no terminal:
-```python -m flask run ```
+```
+python -m flask run 
+```
 
 ## Execução:
 
