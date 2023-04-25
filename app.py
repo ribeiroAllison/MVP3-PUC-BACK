@@ -1,11 +1,19 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS, cross_origin
+from flask_openapi3 import OpenAPI, Info, Tag
+from TarefasSchema import *
 
 
-app = Flask(__name__)
+
+
+
+info = Info(title="API de lista de tarefas", version='1.0.0')
+app = OpenAPI(__name__, info=info)
 app.app_context().push()
-CORS(app, support_credentials=True)
+CORS(app, supports_credentials=True, resource={r"/": { "origins":""} })
+
+
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -14,7 +22,21 @@ db = SQLAlchemy(app)
 
 from model import ToDo
 
-@app.route('/get_list')
+# definindo tags
+home_tag = Tag(name="Documentação", description="Seleção de documentação: Swagger, Redoc ou RapiDoc")
+get_list_tag = Tag(name='Lista de Tarefas', description='Retorna a lista completa de tarefas')
+add_chore_tag = Tag(name='Adiciona Tarefa', description='Adiciona uma nova tarefa à lista')
+delete_tag = Tag(name='Deleta uma Tarefa', description='Remove uma tarefa da lista')
+update_tag = Tag(name='Atualiza Status', description='Muda o status de uma tarefa')
+
+@app.get('/', tags=[home_tag])
+def home():
+    """Redireciona para /openapi, tela que permite a escolha do estilo de documentação.
+    """
+    return redirect('/openapi/swagger')
+
+@app.get('/get_list', tags=[get_list_tag],
+                    responses={'200': ListaDeTarefas, '404': ErrorSchema})
 @cross_origin(supports_credentials=True)
 def getList():
     chore_list = ToDo.query.all()
@@ -22,15 +44,16 @@ def getList():
     return chore_list_dict
 
 
-@app.route('/add_chore', methods=['POST'])
+@app.post('/add_chore', tags=[add_chore_tag],
+                                responses={'200': AdicionaTarefa, '400': ErrorSchema})
 @cross_origin(supports_credentials=True)
-def add_chore():
-    data = request.get_json()  # Get data from request body
-    chore = data.get('chore')
-    finished = data.get('finished')
+def add_chore(form: AdicionaTarefa):
+    chore = form.chore
+    finished = form.finished
+
     if chore:
         # Create a new ToDo object and add it to the database
-        new_chore = ToDo(chores=chore, finished=finished)
+        new_chore = ToDo(chores=chore , finished=finished)
         db.session.add(new_chore)
         db.session.commit()
         return jsonify({'message': 'Chore added successfully'}), 201
@@ -38,9 +61,10 @@ def add_chore():
         return jsonify({'error': 'Chore name is required'}), 400
 
 
-@app.route('/delete_chore/<int:chore_id>', methods=['DELETE'])
-def delete_chore(chore_id):
-    chore = ToDo.query.get(chore_id)  # Get chore object by ID
+@app.delete('/delete_chore', tags=[delete_tag],
+                                responses={'200': DeleteSchema, '400': ErrorSchema})
+def delete_chore(query: DeleteSchema):
+    chore = ToDo.query.get(query.id)  # Get chore object by ID
     if chore:
         db.session.delete(chore)  # Delete chore object from the database
         db.session.commit()
@@ -50,11 +74,12 @@ def delete_chore(chore_id):
     
 
     
-@app.route('/update_chore', methods=['POST'])
-def update_chore():
-    data = request.get_json()  # Get data from request body
-    chore_id = data.get('id')
-    finished = data.get('finished')
+@app.post('/update_chore', methods=['POST'],
+                                responses={'200': AtualizaTarefa, '400': ErrorSchema})
+@cross_origin(supports_credentials=True)
+def update_chore(form: AtualizaTarefa):
+    chore_id = form.id
+    finished = form.finished
     if chore_id:
         chore = ToDo.query.get(chore_id)
         chore.finished = not finished
