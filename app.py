@@ -14,7 +14,7 @@ app.app_context().push()
 CORS(app, supports_credentials=True, resource={r"/": { "origins":""} })
 
 
-
+#Cria um banco de dados em sqlite
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'you-will-never-guess'
@@ -39,6 +39,8 @@ def home():
                     responses={'200': ListaDeTarefas, '404': ErrorSchema})
 @cross_origin(supports_credentials=True)
 def getList():
+    """Retorna todas as tarefas a serem cumpridas, presentes no banco de dados todo.db.
+    """
     chore_list = ToDo.query.all()
     chore_list_dict = [{'id': chore.id, 'chores': chore.chores, 'finished': chore.finished} for chore in chore_list]
     return chore_list_dict
@@ -48,11 +50,13 @@ def getList():
                                 responses={'200': AdicionaTarefa, '400': ErrorSchema})
 @cross_origin(supports_credentials=True)
 def add_chore(form: AdicionaTarefa):
+    """Adiciona uma nova tarefa (tupla) ao banco de dados.
+    """
     chore = form.chore
     finished = form.finished
 
     if chore:
-        # Create a new ToDo object and add it to the database
+        # Cria um novo objeto ToDo a ser inserido no banco de dados
         new_chore = ToDo(chores=chore , finished=finished)
         db.session.add(new_chore)
         db.session.commit()
@@ -64,9 +68,11 @@ def add_chore(form: AdicionaTarefa):
 @app.delete('/delete_chore', tags=[delete_tag],
                                 responses={'200': DeleteSchema, '400': ErrorSchema})
 def delete_chore(query: DeleteSchema):
-    chore = ToDo.query.get(query.id)  # Get chore object by ID
+    """Delete uma tarefa do banco de dados.
+    """
+    chore = ToDo.query.get(query.id)  # Get objeto do tipo 'chore' pelo id
     if chore:
-        db.session.delete(chore)  # Delete chore object from the database
+        db.session.delete(chore)  # Deleta objeto do banco de dados
         db.session.commit()
         return jsonify({'message': 'Chore deleted successfully'}), 200
     else:
@@ -78,6 +84,8 @@ def delete_chore(query: DeleteSchema):
                                 responses={'200': AtualizaTarefa, '400': ErrorSchema})
 @cross_origin(supports_credentials=True)
 def update_chore(form: AtualizaTarefa):
+    """Alterna o status da tarefa entre resolvido e pendente.
+    """
     chore_id = form.id
     finished = form.finished
     if chore_id:
