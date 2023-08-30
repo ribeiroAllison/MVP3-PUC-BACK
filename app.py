@@ -2,32 +2,32 @@ from flask import Flask, jsonify, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS, cross_origin
 from flask_openapi3 import OpenAPI, Info, Tag
-from TarefasSchema import *
+from JokeBookSchema import *
 
 
 
-
-
-info = Info(title="API de lista de tarefas", version='1.0.0')
+info = Info(title="API de Batalha de Piadas", version='1.0.0')
 app = OpenAPI(__name__, info=info)
 app.app_context().push()
 CORS(app, supports_credentials=True, resource={r"/": { "origins":""} })
 
 
 #Cria um banco de dados em sqlite
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///JokeBook.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'you-will-never-guess'
 db = SQLAlchemy(app)
 
-from model import ToDo
 
 # definindo tags
 home_tag = Tag(name="Documentação", description="Seleção de documentação: Swagger, Redoc ou RapiDoc")
-get_list_tag = Tag(name='Lista de Tarefas', description='Retorna a lista completa de tarefas')
-add_chore_tag = Tag(name='Adiciona Tarefa', description='Adiciona uma nova tarefa à lista')
-delete_tag = Tag(name='Deleta uma Tarefa', description='Remove uma tarefa da lista')
-update_tag = Tag(name='Atualiza Status', description='Muda o status de uma tarefa')
+get_list_tag = Tag(name='Livro de Piadas', description='Retorna a lista completa de piadas')
+get_top_rated_tag = Tag(name='Top 10 piadas', description='Retorna 10 piadas mais votadas')
+add_joke_tag = Tag(name='Adiciona Piada', description='Adiciona uma nova piada à lista')
+delete_tag = Tag(name='Deleta uma Piada', description='Remove uma piada da lista')
+update_tag = Tag(name='Atualiza Rating', description='Muda a nota da piada')
+
+from model import JokeBook
 
 @app.get('/', tags=[home_tag])
 def home():
@@ -36,62 +36,73 @@ def home():
     return redirect('/openapi/swagger')
 
 @app.get('/get_list', tags=[get_list_tag],
-                    responses={'200': ListaDeTarefas, '404': ErrorSchema})
+                    responses={'200': ListaDePiadas, '404': ErrorSchema})
 @cross_origin(supports_credentials=True)
-def getList():
-    """Retorna todas as tarefas a serem cumpridas, presentes no banco de dados todo.db.
+def get_all():
+    """Retorna todas as piadas presentes no banco de dados JokeBook.db.
     """
-    chore_list = ToDo.query.all()
-    chore_list_dict = [{'id': chore.id, 'chores': chore.chores, 'finished': chore.finished} for chore in chore_list]
-    return chore_list_dict
+    joke_list = JokeBook.query.all()
+    joke_list_dict = [{'id': joke.id, 'joke': joke.joke, 'stars': joke.stars} for joke in joke_list]
+    return joke_list_dict
 
-
-@app.post('/add_chore', tags=[add_chore_tag],
-                                responses={'200': AdicionaTarefa, '400': ErrorSchema})
+@app.get('/get_top_rated', tags=[get_top_rated_tag],
+                    responses={'200': ListaDePiadas, '404': ErrorSchema})
 @cross_origin(supports_credentials=True)
-def add_chore(form: AdicionaTarefa):
+def get_top_rated():
+    """Retorna as 10 piadas com as maiores avaliações (stars) presentes no banco de dados JokeBook.db.
+    """
+    joke_list = JokeBook.query.order_by(JokeBook.stars.desc()).limit(10).all()
+    joke_list_dict = [{'id': joke.id, 'joke': joke.joke, 'stars': joke.stars} for joke in joke_list]
+    return joke_list_dict
+
+
+@app.post('/add_joke', tags=[add_joke_tag],
+                                responses={'200': AdicionaPiada, '400': ErrorSchema})
+@cross_origin(supports_credentials=True)
+def add_joke(form: AdicionaPiada):
     """Adiciona uma nova tarefa (tupla) ao banco de dados.
     """
-    chore = form.chore
-    finished = form.finished
+    joke_to_add = form.joke
+    stars_to_add = form.stars
 
-    if chore:
-        # Cria um novo objeto ToDo a ser inserido no banco de dados
-        new_chore = ToDo(chores=chore , finished=finished)
-        db.session.add(new_chore)
+    if joke_to_add:
+        # Cria um novo objeto JokeBook a ser inserido no banco de dados
+        new_joke = JokeBook(joke=joke_to_add , stars=stars_to_add)
+        db.session.add(new_joke)
         db.session.commit()
-        return jsonify({'message': 'Chore added successfully'}), 201
+        return jsonify({'message': 'Joke added successfully'}), 201
     else:
-        return jsonify({'error': 'Chore name is required'}), 400
+        return jsonify({'error': 'Joke name is required'}), 400
 
 
-@app.delete('/delete_chore', tags=[delete_tag],
+@app.delete('/delete_joke', tags=[delete_tag],
                                 responses={'200': DeleteSchema, '400': ErrorSchema})
-def delete_chore(query: DeleteSchema):
+def delete_joke(query: DeleteSchema):
     """Delete uma tarefa do banco de dados.
     """
-    chore = ToDo.query.get(query.id)  # Get objeto do tipo 'chore' pelo id
-    if chore:
-        db.session.delete(chore)  # Deleta objeto do banco de dados
+    joke = JokeBook.query.get(query.id)  # Get objeto do tipo 'joke' pelo id
+    if joke:
+        db.session.delete(joke)  # Deleta objeto do banco de dados
         db.session.commit()
-        return jsonify({'message': 'Chore deleted successfully'}), 200
+        return jsonify({'message': 'Joke deleted successfully'}), 200
     else:
-        return jsonify({'error': 'Chore not found'}), 404
+        return jsonify({'error': 'Joke not found'}), 404
     
 
     
-@app.post('/update_chore', tags=[update_tag],
-                                responses={'200': AtualizaTarefa, '400': ErrorSchema})
+@app.post('/update_joke', tags=[update_tag],
+                                responses={'200': AtualizaStars, '400': ErrorSchema})
 @cross_origin(supports_credentials=True)
-def update_chore(form: AtualizaTarefa):
-    """Alterna o status da tarefa entre resolvido e pendente.
+def update_rating(form: AtualizaStars):
+    """Atualiza a nota da piada.
     """
-    chore_id = form.id
-    finished = form.finished
-    if chore_id:
-        chore = ToDo.query.get(chore_id)
-        chore.finished = not finished
+    joke_id = form.id
+    stars_update = form.stars
+    if joke_id:
+        joke = JokeBook.query.get(joke_id)
+        joke.stars = stars_update
         db.session.commit()
-        return jsonify({'message': 'Chore updated successfully'}), 200
+        return jsonify({'message': 'Joke Rating updated successfully'}), 200
     else:
-        return jsonify({'error': 'Chore not found'}), 404
+        return jsonify({'error': 'Joke not found'}), 404
+    
