@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS, cross_origin
 from flask_openapi3 import OpenAPI, Info, Tag
-from JokeBookSchema import *
+from JokeBookSchema import ListaDePiadas, AdicionaPiada, ErrorSchema, DeleteSchema, AtualizaStars
 
 
 
