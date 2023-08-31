@@ -6,6 +6,7 @@ class ListaDePiadas(BaseModel):
     id: int
     joke:str
     stars:int
+    
 
     
 
@@ -31,5 +32,5 @@ class DeleteSchema(BaseModel):
 class AtualizaStars(BaseModel):
     """ Campos a serem preenchidos na adição de uma nova Piada
     """
-    id:int
+    joke:str
     stars:int

@@ -1,33 +1,47 @@
 from flask import Flask, jsonify, request, redirect
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func
 from flask_cors import CORS, cross_origin
 from flask_openapi3 import OpenAPI, Info, Tag
-from JokeBookSchema import ListaDePiadas, AdicionaPiada, ErrorSchema, DeleteSchema, AtualizaStars
-
+from schema.JokeBookSchema import ListaDePiadas, AdicionaPiada, ErrorSchema, DeleteSchema, AtualizaStars
+from schema.DadSchema import GetDadScore, AtualizaScore
 
 
 info = Info(title="API de Batalha de Piadas", version='1.0.0')
 app = OpenAPI(__name__, info=info)
 app.app_context().push()
-CORS(app, supports_credentials=True, resource={r"/": { "origins":""} })
 
 
 #Cria um banco de dados em sqlite
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///JokeBook.db'
+app.config['SQLALCHEMY_BINDS'] = {
+    'jokebook': 'sqlite:///JokeBook.db',
+    'dad' : 'sqlite:///Dad.db'
+}
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///default.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'you-will-never-guess'
 db = SQLAlchemy(app)
 
+CORS(app, supports_credentials=True, resources={r"/": { "origins":""} })
+
+
+
 
 # definindo tags
-home_tag = Tag(name="Documentação", description="Seleção de documentação: Swagger, Redoc ou RapiDoc")
+# Piada DB:
+home_tag = Tag(name="Documentação", description="Seleção de documentação: Swagger, Redoc ou RapiDoc") 
 get_list_tag = Tag(name='Livro de Piadas', description='Retorna a lista completa de piadas')
 get_top_rated_tag = Tag(name='Top 10 piadas', description='Retorna 10 piadas mais votadas')
-add_joke_tag = Tag(name='Adiciona Piada', description='Adiciona uma nova piada à lista')
+add_joke_tag = Tag(name='Adiciona Piada', description='Adiciona uma nova piada à lista') 
 delete_tag = Tag(name='Deleta uma Piada', description='Remove uma piada da lista')
 update_tag = Tag(name='Atualiza Rating', description='Muda a nota da piada')
 
-from model import JokeBook
+#Dad DB:
+get_dads_tag = Tag(name='Busca dads', description='Retorna score total de cada Dad')
+update_dad_score_tag = Tag(name='Update pontuação de Dads', description='Aumenta 1 ponto para cada dad quando sua piada é votada')
+
+
+from models.model import JokeBook, Dad
 
 @app.get('/', tags=[home_tag])
 def home():
@@ -35,7 +49,7 @@ def home():
     """
     return redirect('/openapi/swagger')
 
-@app.get('/get_list', tags=[get_list_tag],
+@app.get('/jokes', tags=[get_list_tag],
                     responses={'200': ListaDePiadas, '404': ErrorSchema})
 @cross_origin(supports_credentials=True)
 def get_all():
@@ -45,7 +59,7 @@ def get_all():
     joke_list_dict = [{'id': joke.id, 'joke': joke.joke, 'stars': joke.stars} for joke in joke_list]
     return joke_list_dict
 
-@app.get('/get_top_rated', tags=[get_top_rated_tag],
+@app.get('/jokes/top', tags=[get_top_rated_tag],
                     responses={'200': ListaDePiadas, '404': ErrorSchema})
 @cross_origin(supports_credentials=True)
 def get_top_rated():
@@ -56,7 +70,7 @@ def get_top_rated():
     return joke_list_dict
 
 
-@app.post('/add_joke', tags=[add_joke_tag],
+@app.post('/jokes', tags=[add_joke_tag],
                                 responses={'200': AdicionaPiada, '400': ErrorSchema})
 @cross_origin(supports_credentials=True)
 def add_joke(form: AdicionaPiada):
@@ -75,7 +89,7 @@ def add_joke(form: AdicionaPiada):
         return jsonify({'error': 'Joke name is required'}), 400
 
 
-@app.delete('/delete_joke', tags=[delete_tag],
+@app.delete('/jokes', tags=[delete_tag],
                                 responses={'200': DeleteSchema, '400': ErrorSchema})
 def delete_joke(query: DeleteSchema):
     """Delete uma tarefa do banco de dados.
@@ -90,19 +104,30 @@ def delete_joke(query: DeleteSchema):
     
 
     
-@app.post('/update_joke', tags=[update_tag],
+@app.put('/jokes', tags=[update_tag],
                                 responses={'200': AtualizaStars, '400': ErrorSchema})
 @cross_origin(supports_credentials=True)
 def update_rating(form: AtualizaStars):
     """Atualiza a nota da piada.
     """
-    joke_id = form.id
+    selected_joke = form.joke
     stars_update = form.stars
-    if joke_id:
-        joke = JokeBook.query.get(joke_id)
-        joke.stars = stars_update
-        db.session.commit()
-        return jsonify({'message': 'Joke Rating updated successfully'}), 200
-    else:
-        return jsonify({'error': 'Joke not found'}), 404
+    if selected_joke:
+        joke = JokeBook.query.filter(func.lower(JokeBook.joke) == func.lower(selected_joke)).first()
+        if joke:
+            joke.stars = stars_update
+            db.session.commit()
+            return jsonify({'message': 'Joke Rating updated successfully'}), 200
+        else:
+            return jsonify({'error': 'Joke not found'}), 404
     
+
+@app.put('/dads', tags=[get_dads_tag],
+                                responses={'200': GetDadScore, '400': ErrorSchema})
+@cross_origin(supports_credentials=True)
+def get_dads():
+    """Retorna os Dads e suas pontuações
+    """
+    dads_scores = Dad.query.all()
+    dads_scores_dict = [{'dad': dad.dad, 'score': dad.score } for dad in dads_scores]
+    return dads_scores_dict
