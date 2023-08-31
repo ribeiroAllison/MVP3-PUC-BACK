@@ -4,7 +4,7 @@ from sqlalchemy import func
 from flask_cors import CORS, cross_origin
 from flask_openapi3 import OpenAPI, Info, Tag
 from schema.JokeBookSchema import ListaDePiadas, AdicionaPiada, ErrorSchema, DeleteSchema, AtualizaStars
-from schema.DadSchema import GetDadScore, AtualizaScore
+from schema.DadSchema import GetDadScore, AtualizaScore, AddDad
 
 
 info = Info(title="API de Batalha de Piadas", version='1.0.0')
@@ -122,7 +122,7 @@ def update_rating(form: AtualizaStars):
             return jsonify({'error': 'Joke not found'}), 404
     
 
-@app.put('/dads', tags=[get_dads_tag],
+@app.get('/dads', tags=[get_dads_tag],
                                 responses={'200': GetDadScore, '400': ErrorSchema})
 @cross_origin(supports_credentials=True)
 def get_dads():
@@ -131,3 +131,18 @@ def get_dads():
     dads_scores = Dad.query.all()
     dads_scores_dict = [{'dad': dad.dad, 'score': dad.score } for dad in dads_scores]
     return dads_scores_dict
+
+@app.put('/dads', tags=[update_dad_score_tag],
+                responses={'200': AtualizaScore, '400': ErrorSchema})
+@cross_origin(supports_credentials=True)
+def update_dad_score(form: AtualizaScore):
+    """Atualiza a pontuação dos dads."""
+    dad = form.dad
+    if dad:
+        selected_dad = Dad.query.filter(func.lower(Dad.dad) == func.lower(dad)).first()
+        if selected_dad:
+            selected_dad.score += 1
+            db.session.commit()
+            return jsonify({'message': 'Score updated successfully'}), 200
+        else:
+            return jsonify({'error': 'Error updating score, dad not found'}), 404

@@ -9,4 +9,9 @@ class AtualizaScore(BaseModel):
     """ Atualiza Score do Dad
     """
     dad: str
+
+
+class AddDad(BaseModel):
+    # Busca todos os dads e suas respectivas pontuações
+    dad: str
     score: int
