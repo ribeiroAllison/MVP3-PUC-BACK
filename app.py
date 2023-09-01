@@ -74,19 +74,28 @@ def get_top_rated():
                                 responses={'200': AdicionaPiada, '400': ErrorSchema})
 @cross_origin(supports_credentials=True)
 def add_joke(form: AdicionaPiada):
-    """Adiciona uma nova tarefa (tupla) ao banco de dados.
-    """
     joke_to_add = form.joke
-    stars_to_add = form.stars
+    stars_to_add = 1
 
-    if joke_to_add:
-        # Cria um novo objeto JokeBook a ser inserido no banco de dados
-        new_joke = JokeBook(joke=joke_to_add , stars=stars_to_add)
+    if not joke_to_add:
+        return jsonify({'error': 'Joke name is required'}), 400
+
+    def joke_in_db():
+        result = JokeBook.query.filter(func.lower(JokeBook.joke) == func.lower(joke_to_add)).first()
+        return result is not None
+
+    if joke_in_db():
+        return jsonify({'message': 'Joke already exists in the database'}), 200
+
+    new_joke = JokeBook(joke=joke_to_add, stars=stars_to_add)
+
+    try:
         db.session.add(new_joke)
         db.session.commit()
         return jsonify({'message': 'Joke added successfully'}), 201
-    else:
-        return jsonify({'error': 'Joke name is required'}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error adding joke: {str(e)}'}), 500
 
 
 @app.delete('/jokes', tags=[delete_tag],
@@ -111,11 +120,10 @@ def update_rating(form: AtualizaStars):
     """Atualiza a nota da piada.
     """
     selected_joke = form.joke
-    stars_update = form.stars
     if selected_joke:
         joke = JokeBook.query.filter(func.lower(JokeBook.joke) == func.lower(selected_joke)).first()
         if joke:
-            joke.stars = stars_update
+            joke.stars += 1
             db.session.commit()
             return jsonify({'message': 'Joke Rating updated successfully'}), 200
         else:

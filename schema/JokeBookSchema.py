@@ -14,7 +14,6 @@ class AdicionaPiada(BaseModel):
     """ Campos a serem preenchidos na adição de uma nova Piada
     """
     joke:str
-    stars:int
 
 
 
@@ -33,4 +32,4 @@ class AtualizaStars(BaseModel):
     """ Campos a serem preenchidos na adição de uma nova Piada
     """
     joke:str
-    stars:int
+
