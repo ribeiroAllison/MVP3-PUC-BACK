@@ -1,19 +1,28 @@
 # O que é esse projeto?
 
-Este é uma API REST feita como parte do MVP da primeira sprint da pós graduação em Desenvolvimento Full Stack pela PUC-Rio
+Este é uma API REST feita como parte do MVP da terceira sprint da pós graduação em Desenvolvimento Full Stack pela PUC-Rio
 
 Esta API recebe requests do front-end e atualiza um banco de dados contendo uma lista da tarefas a serem realizadas pelo usuário.
 
 
 ## Rotas:
 
-### Esta API é composta por cinco rotas:
+### Esta API é pelas seguintes rotas:
 
-- `Rota index:` Do método `GET`, é identificada por '/' e leva à documentação em Swagger.
-- `Rota get_list:` Do método `GET`, retorna todas as tarefas presentes no banco de dados.
-- `Rota add_chore:` Do método `POST`, adiciona uma nova tarefa ao banco de dados.
-- `Rota delete_chore:` Do método `DELETE`, exclui uma tarefa do banco de dados.
-- `Rota update_chore:` Do método `POST`, alterna o status de uma tarefa entre pendente e concluído.
+#### BANCO DE DADOS DE PIADAS - JOKEBOOK:
+
+- `Rota /:` Do método `GET`, é identificada por '/' e leva à documentação em Swagger.
+- `Rota /jokes:` Do método `GET`, retorna todas as piadas do banco de dados.
+- `Rota /jokes/top:` Do método `GET`, retorna as 10 piadas mais votadas do banco de dados.
+- `Rota /jokes:` Do método `POST`, adiciona uma nova piada ao JokeBook.
+- `Rota /jokes:` Do método `PUT`, aumenta o score de uma piada em 1 ponto.
+- `Rota /jokes:` Do método `DELETE`, apaga uma piada.
+
+#### BANCO DE DADOS DE COMBATENTES(DADS) - DAD:
+
+- `Rota /dads:` Do método `GET`, retorna os combatentes e seus respectivos scores.
+- `Rota /dads:` Do método `PUT`, adiciona 1 ponto ao score do combatente votado.
+
 
 ## Como instalar:
 
